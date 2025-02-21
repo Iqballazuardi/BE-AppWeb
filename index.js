@@ -10,7 +10,7 @@ app.use(bodyParser.json());
 // // Dapatkan semua data dari tabel
 app.get("/books", async (req, res) => {
   try {
-    const result = await client.query("SELECT * FROM items");
+    const result = await client.query("SELECT * FROM books");
     res.json(result.rows);
   } catch (err) {
     console.error(err);
