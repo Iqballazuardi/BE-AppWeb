@@ -1,10 +1,17 @@
 const express = require("express");
+const cors = require("cors");
 const bodyParser = require("body-parser");
 
 const client = require("./db");
 const app = express();
-
 const port = 4000;
+
+const corsOptions = {
+  origin: "http://localhost:5173", //(https://your-client-app.com)
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
 // // Dapatkan semua data dari tabel
@@ -39,7 +46,7 @@ app.post("/registrasi", async (request, response) => {
     } else {
       response.status(200).json({
         status: 200,
-        message: "Username already exists",
+        message: "Username atau email  already exists",
       });
     }
   } catch (err) {
