@@ -4,17 +4,51 @@ const bodyParser = require("body-parser");
 const client = require("./db");
 const app = express();
 
-const port = 5432;
+const port = 4000;
 app.use(bodyParser.json());
 
 // // Dapatkan semua data dari tabel
-app.get("/books", async (req, res) => {
+app.get("/users", async (request, response) => {
   try {
-    const result = await client.query("SELECT * FROM books");
-    res.json(result.rows);
+    const result = await client.query("SELECT * FROM users");
+    response.status(200).json({
+      data: result.data,
+      message: "Data users berhasil ditemukan",
+      status: 200,
+    });
+  } catch (err) {
+    response.status(500).json({
+      error: "Internal Server Error",
+      status: 500,
+      message: err.message,
+    });
+  }
+});
+
+app.post("/registrasi", async (request, response) => {
+  const { username, password, email, role } = request.body;
+  try {
+    const result = await client.query(`SELECT * FROM users WHERE email = '${email}' or username = '${username}'`);
+    // console.log(result);
+    if (result.rows.length === 0) {
+      await client.query("INSERT INTO users (username, password, email, role) VALUES ($1, $2, $3, $4) RETURNING *", [username, password, email, role]);
+      response.status(201).json({
+        status: 201,
+        message: "Registrasi Success!",
+      });
+    } else {
+      response.status(200).json({
+        status: 200,
+        message: "Username already exists",
+      });
+    }
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Internal Server Error" });
+    response.status(500).json({
+      status: 500,
+      message: "Internal Server Error",
+      error: err,
+    });
   }
 });
 
