@@ -34,25 +34,29 @@ app.get("/users", async (request, response) => {
 
 app.post("/registrasi", async (request, response) => {
   const { username, password, email, role } = request.body;
+  const result = await client.query(`SELECT * FROM users WHERE email = '${email}' or username = '${username}'`);
+  if (result.rows.length === 0) {
+  }
   try {
     const result = await client.query(`SELECT * FROM users WHERE email = '${email}' or username = '${username}'`);
-    // console.log(result);
     if (result.rows.length === 0) {
       await client.query("INSERT INTO users (username, password, email, role) VALUES ($1, $2, $3, $4) RETURNING *", [username, password, email, role]);
-      response.status(201).json({
-        status: 201,
+      response.status("201").json({
+        status: "201",
         message: "Registrasi Success!",
       });
+      return response.status;
     } else {
-      response.status(200).json({
-        status: 200,
+      response.status("200").json({
+        status: "200",
         message: "Username atau email  already exists",
       });
+      console.log(response);
     }
   } catch (err) {
     console.error(err);
-    response.status(500).json({
-      status: 500,
+    response.status("500").json({
+      status: "500",
       message: "Internal Server Error",
       error: err,
     });
