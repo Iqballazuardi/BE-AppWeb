@@ -15,14 +15,25 @@ app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
 // // Dapatkan semua data dari tabel
-app.get("/users", async (request, response) => {
+app.post("/login", async (request, response) => {
+  const { email, password } = request.body;
+
   try {
-    const result = await client.query("SELECT * FROM users");
-    response.status(200).json({
-      data: result.data,
-      message: "Data users berhasil ditemukan",
-      status: 200,
-    });
+    const result = await client.query(`SELECT username FROM users WHERE  email = '${email}' AND  password = '${password}'`);
+    if (result.rows.length === 1) {
+      await client.query(`SELECT username FROM users where email = '${email}' and password = '${password}'`);
+      response.status(201).json({
+        data: result.rows[0],
+        message: "Login Success!",
+        status: 201,
+      });
+      return response.status;
+    } else {
+      response.status(200).json({
+        message: "Username or password incorrect!s",
+        status: 200,
+      });
+    }
   } catch (err) {
     response.status(500).json({
       error: "Internal Server Error",
@@ -34,37 +45,45 @@ app.get("/users", async (request, response) => {
 
 app.post("/registrasi", async (request, response) => {
   const { username, password, email, role } = request.body;
-  const result = await client.query(`SELECT * FROM users WHERE email = '${email}' or username = '${username}'`);
-  if (result.rows.length === 0) {
-  }
+
   try {
     const result = await client.query(`SELECT * FROM users WHERE email = '${email}' or username = '${username}'`);
     if (result.rows.length === 0) {
       await client.query("INSERT INTO users (username, password, email, role) VALUES ($1, $2, $3, $4) RETURNING *", [username, password, email, role]);
-      response.status("201").json({
-        status: "201",
+      response.status(201).json({
+        status: 201,
         message: "Registrasi Success!",
       });
       return response.status;
     } else {
-      response.status("200").json({
-        status: "200",
+      response.status(200).json({
+        status: 200,
         message: "Username atau email  already exists",
       });
-      console.log(response);
     }
   } catch (err) {
-    console.error(err);
-    response.status("500").json({
-      status: "500",
+    response.status(500).json({
+      status: 500,
       message: "Internal Server Error",
       error: err,
     });
   }
 });
 
+app.get("/books", async (request, response) => {
+  try {
+    const result = await client.query("SELECT * FROM books");
+    console.log(response.status(200).json(result.rows));
+  } catch (err) {
+    response.status(500).json({
+      status: 500,
+      message: "Internal Server Error",
+      error: err,
+    });
+  }
+});
 // // Dapatkan data berdasarkan ID
-// app.get("/api/items/:id", async (req, res) => {
+// app.get("/api/items:id", async (req, res) => {
 //   const { id } = req.params;
 //   try {
 //     const result = await pool.query("SELECT * FROM items WHERE id = $1", [id]);
