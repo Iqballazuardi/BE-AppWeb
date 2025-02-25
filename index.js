@@ -96,15 +96,15 @@ app.post("/books/addBooks", async (request, response) => {
 });
 
 // Update data
-app.put("/books/booksUpdate/:id", async (req, res) => {
-  const { id } = req.params;
-  const { title, description, author } = req.body;
+app.put("/books/booksUpdate/:id", async (request, response) => {
+  const { id } = request.params;
+  const { title, description, author } = request.body;
   try {
     const result = await client.query(`UPDATE books SET title ='${title}', description ='${description}', author = '${author}' WHERE id = ${id} RETURNING *`);
-    res.json(result.rows[0]);
+    response.json(result.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Internal Server Error" });
+    response.status(500).json({ error: "Internal Server Error" });
   }
 });
 
