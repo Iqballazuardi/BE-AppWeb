@@ -82,27 +82,16 @@ app.get("/books", async (request, response) => {
     });
   }
 });
-// // Dapatkan data berdasarkan ID
-// app.get("/api/items:id", async (req, res) => {
-//   const { id } = req.params;
-//   try {
-//     const result = await pool.query("SELECT * FROM items WHERE id = $1", [id]);
-//     res.json(result.rows[0]);
-//   } catch (err) {
-//     console.error(err);
-//     res.status(500).json({ error: "Internal Server Error" });
-//   }
-// });
 
 // Tambahkan data baru
-app.post("/books/addBooks", async (req, res) => {
-  const { title, description, author } = req.body;
+app.post("/books/addBooks", async (request, response) => {
+  const { title, description, author } = request.body;
   try {
     const result = await client.query(`INSERT INTO books (title, description, author) VALUES ('${title}', '${description}', '${author}')`);
-    res.json(result.rows[0]);
+    response.status(200).json(result.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Internal Server Error" });
+    response.status(500).json({ error: "Internal Server Error" });
   }
 });
 
@@ -120,14 +109,14 @@ app.put("/books/booksUpdate/:id", async (req, res) => {
 });
 
 // Hapus data
-app.delete("/books/delete/:id", async (req, res) => {
-  const { id } = req.params;
+app.delete("/books/delete/:id", async (request, response) => {
+  const { id } = request.params;
   try {
-    await client.query("DELETE FROM books WHERE id = $1", [id]);
-    res.json({ message: "Item deleted" });
+    await client.query(`DELETE FROM books WHERE id = ${id}`);
+    response.json({ message: "Item deleted" });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: "Internal Server Error" });
+    response.status(500).json({ error: "Internal Server Error" });
   }
 });
 
