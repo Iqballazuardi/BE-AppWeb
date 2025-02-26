@@ -83,7 +83,7 @@ app.get("/books", async (request, response) => {
     });
   }
 });
-app.get("/books/books/${id}", async (request, response) => {
+app.get("/books/books/:id", async (request, response) => {
   const { id } = request.params;
   try {
     const result = await client.query(`SELECT * FROM books where id =${id}`);
