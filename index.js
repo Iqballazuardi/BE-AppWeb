@@ -135,8 +135,11 @@ app.get("/books/books/:id", async (request, response) => {
 app.post("/books/addBooks", async (request, response) => {
   const { title, description, author } = request.body;
   try {
-    const result = await client.query(`INSERT INTO books (title, description, author) VALUES ('${title}', '${description}', '${author}')`);
-    response.status(200).json(result.rows[0]);
+    const result = await client.query("SELECT * FROM books");
+    if (result.rows.length === 0) {
+      await client.query(`INSERT INTO books (title, description, author) VALUES ('${title}', '${description}', '${author}')`);
+      response.status(200).json(result.rows[0]);
+    }
   } catch (err) {
     response.status(500).json({ error: "Internal Server Error" });
   }
