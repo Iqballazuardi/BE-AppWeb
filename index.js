@@ -1,33 +1,45 @@
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const jwt = require("jsonwebtoken");
 
 const client = require("./db");
 const app = express();
 const port = 4000;
 
 const corsOptions = {
-  origin: "http://localhost:5173", //(https://your-client-app.com)
+  origin: "http://localhost:5173",
   optionsSuccessStatus: 200,
 };
 
+const SECRET_KEY = "appweb";
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
-// // Dapatkan semua data dari tabel
-app.post("/login", async (request, response) => {
-  const { email, password } = request.body;
+const authenticateToken = (request, response, next) => {
+  const token = request.header("Authorization");
+  console.log(token);
+  if (!token) return response.status(401).send("Access denied. No token provided.");
 
+  jwt.verify(token, SECRET_KEY, (err, user) => {
+    if (err) return response.status(403).send("Forbidden : Invalid Token");
+    request.user = user;
+    next();
+  });
+};
+// // Dapatkan semua data dari tabel
+app.post("/auth/login", async (request, response) => {
+  const { email, password } = request.body;
   try {
-    const result = await client.query(`SELECT username FROM users WHERE  email = '${email}' AND  password = '${password}'`);
+    const result = await client.query(`SELECT username FROM users WHERE  email = '${email}' AND  password = '${password}' limit 1`);
+
     if (result.rows.length === 1) {
-      await client.query(`SELECT username FROM users where email = '${email}' and password = '${password}'`);
       response.status(201).json({
         data: result.rows[0],
+        token: jwt.sign({ username: result.rows[0].username }, SECRET_KEY, { expiresIn: "15m" }),
         message: "Login Success!",
         status: 201,
       });
-      return response.status;
     } else {
       response.status(200).json({
         message: "Username or password incorrect!s",
@@ -35,6 +47,7 @@ app.post("/login", async (request, response) => {
       });
     }
   } catch (err) {
+    console.log(response);
     response.status(500).json({
       error: "Internal Server Error",
       status: 500,
@@ -43,7 +56,7 @@ app.post("/login", async (request, response) => {
   }
 });
 
-app.post("/registrasi", async (request, response) => {
+app.post("/auth/registrasi", async (request, response) => {
   const { username, password, email } = request.body;
 
   try {
@@ -70,11 +83,14 @@ app.post("/registrasi", async (request, response) => {
   }
 });
 
-app.get("/books", async (request, response) => {
+app.get("/books", authenticateToken, async (request, response) => {
   try {
     const result = await client.query("SELECT * FROM books");
-
-    response.status(201).json(result.rows);
+    response.status(201).json({
+      status: 201,
+      data: result.rows,
+      message: "Get All Books Success!",
+    });
   } catch (err) {
     response.status(500).json({
       status: 500,
@@ -87,7 +103,7 @@ app.get("/books", async (request, response) => {
 app.get("/books/search", async (request, response) => {
   const { title } = request.query;
   if (!title) {
-    return response.status(400).send("Query parameter q is missing");
+    response.status(400).send("Query parameter is missing");
   }
   try {
     const result = await client.query(`SELECT * FROM books WHERE title ILIKE '%${title}%'`);
@@ -112,16 +128,19 @@ app.get("/books/search", async (request, response) => {
   }
 });
 
-app.get("/books/books/:id", async (request, response) => {
+app.get("/books/:id", async (request, response) => {
   const { id } = request.params;
   try {
     const result = await client.query(`SELECT * FROM books where id =${id}`);
     if (result.rows.length === 1) {
-      response.status(201).json(result.rows[0]);
+      response.status(201).json({
+        status: 201,
+        data: result.rows,
+        message: "Get Book Success!",
+      });
     } else {
       response.status(200).json({ message: "Book not found" });
     }
-    // return result.rows;
   } catch (err) {
     response.status(500).json({
       status: 500,
@@ -132,29 +151,45 @@ app.get("/books/books/:id", async (request, response) => {
 });
 
 // Tambahkan data baru
-app.post("/books/addBooks", async (request, response) => {
+app.post("/books/add", async (request, response) => {
   const { title, description, author } = request.body;
   try {
-    const result = await client.query("SELECT * FROM books");
-    if (result.rows.length === 0) {
+    const result = await client.query(`SELECT * FROM books WHERE title = '${title}'`);
+    if (result.length > 0) {
       await client.query(`INSERT INTO books (title, description, author) VALUES ('${title}', '${description}', '${author}')`);
-      response.status(200).json(result.rows[0]);
+      response.status(20).json({
+        data: result.rows[0],
+        status: 201,
+        message: "Book added successfully",
+      });
+    } else {
+      response.status(200).json({ message: "Book already exists!" });
     }
   } catch (err) {
-    response.status(500).json({ error: "Internal Server Error" });
+    console.log(response);
+    response.status(500).json({
+      error: "Internal Server Error!!!",
+      message: err.message,
+    });
   }
 });
 
 // Update data
-app.put("/books/booksUpdate/:id", async (request, response) => {
+app.put("/books/update/:id", async (request, response) => {
   const { id } = request.params;
   const { title, description, author } = request.body;
   try {
     const result = await client.query(`UPDATE books SET title ='${title}', description ='${description}', author = '${author}' WHERE id = ${id} RETURNING *`);
-    console.log(result);
-    response.json(result.rows[0]);
+    response.json({
+      data: result.rows,
+      status: 200,
+      message: "Book updated successfully",
+    });
   } catch (err) {
-    response.status(500).json({ error: "Internal Server Error" });
+    response.status(500).json({
+      error: "Internal Server Error",
+      status: 500,
+    });
   }
 });
 
@@ -163,7 +198,7 @@ app.delete("/books/delete/:id", async (request, response) => {
   const { id } = request.params;
   try {
     await client.query(`DELETE FROM books WHERE id = ${id}`);
-    response.json({ message: "Item deleted" });
+    response.json({ message: "Item deleted", status: 200 });
   } catch (err) {
     response.status(500).json({ error: "Internal Server Error" });
   }
