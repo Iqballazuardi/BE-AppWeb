@@ -42,7 +42,7 @@ app.post("/auth/login", async (request, response) => {
       });
     } else {
       response.status(200).json({
-        message: "Username or password incorrect!s",
+        message: "Username or password incorrects!",
         status: 200,
       });
     }
@@ -155,14 +155,16 @@ app.post("/books/add", async (request, response) => {
   const { title, description, author } = request.body;
   try {
     const result = await client.query(`SELECT * FROM books WHERE title = '${title}'`);
-    if (result.length > 0) {
+    console.log(result.rowCount);
+    if (result.rowCount === 0) {
       await client.query(`INSERT INTO books (title, description, author) VALUES ('${title}', '${description}', '${author}')`);
-      response.status(20).json({
+      response.status(201).json({
         data: result.rows[0],
         status: 201,
         message: "Book added successfully",
       });
     } else {
+      // console.log(response);
       response.status(200).json({ message: "Book already exists!" });
     }
   } catch (err) {
