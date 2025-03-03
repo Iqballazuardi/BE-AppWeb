@@ -71,7 +71,7 @@ app.post("/auth/registrasi", async (request, response) => {
     } else {
       response.status(200).json({
         status: 200,
-        message: "Username atau email  already exists",
+        message: "Username atau email already exists",
       });
     }
   } catch (err) {
@@ -115,7 +115,7 @@ app.get("/books/search", async (request, response) => {
       });
     } else {
       response.status(200).json({
-        message: "No books found!",
+        message: "No book found!",
         status: 200,
       });
     }
@@ -173,12 +173,12 @@ app.get("/books/:id", async (request, response) => {
 
 // Tambahkan data baru
 app.post("/books/add", async (request, response) => {
-  const { title, description, author } = request.body;
+  const { title, description, author, genre } = request.body;
   try {
     const result = await client.query(`SELECT * FROM books WHERE title = '${title}'`);
     console.log(result.rowCount);
     if (result.rowCount === 0) {
-      await client.query(`INSERT INTO books (title, description, author) VALUES ('${title}', '${description}', '${author}')`);
+      await client.query(`INSERT INTO books (title, description, author,genre) VALUES ('${title}', '${description}', '${author}', '${genre}')`);
       response.status(201).json({
         data: result.rows[0],
         status: 201,
@@ -189,7 +189,6 @@ app.post("/books/add", async (request, response) => {
       response.status(200).json({ message: "Book already exists!" });
     }
   } catch (err) {
-    console.log(response);
     response.status(500).json({
       error: "Internal Server Error!!!",
       message: err.message,
@@ -200,9 +199,9 @@ app.post("/books/add", async (request, response) => {
 // Update data
 app.put("/books/update/:id", async (request, response) => {
   const { id } = request.params;
-  const { title, description, author } = request.body;
+  const { title, description, author, genre } = request.body;
   try {
-    const result = await client.query(`UPDATE books SET title ='${title}', description ='${description}', author = '${author}' WHERE id = ${id} RETURNING *`);
+    const result = await client.query(`UPDATE books SET title ='${title}', description ='${description}', author = '${author}',genre = '${genre}' WHERE id = ${id} RETURNING *`);
     response.json({
       data: result.rows,
       status: 200,
