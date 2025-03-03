@@ -27,7 +27,7 @@ const authenticateToken = (request, response, next) => {
     next();
   });
 };
-// // Dapatkan semua data dari tabel
+
 app.post("/auth/login", async (request, response) => {
   const { email, password } = request.body;
   try {
