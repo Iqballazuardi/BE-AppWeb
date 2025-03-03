@@ -127,6 +127,27 @@ app.get("/books/search", async (request, response) => {
     });
   }
 });
+app.get("/books/genre", async (request, response) => {
+  const { genre } = request.query;
+  try {
+    const result = await client.query(`SELECT * FROM books WHERE genre ILIKE '%${genre}%'`);
+    if (result.rows.length !== 0) {
+      response.status(201).json({
+        data: result.rows,
+        status: 201,
+        message: "Get Books by Genre Success!",
+      });
+    } else {
+      response.status(200).json({ message: "No books found by this genre" });
+    }
+  } catch (err) {
+    response.status(500).json({
+      status: 500,
+      message: "Internal Server Error",
+      error: err,
+    });
+  }
+});
 
 app.get("/books/:id", async (request, response) => {
   const { id } = request.params;
