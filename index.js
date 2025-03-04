@@ -18,7 +18,6 @@ app.use(bodyParser.json());
 
 const authenticateToken = (request, response, next) => {
   const token = request.header("Authorization");
-  console.log(token);
   if (!token) return response.status(401).send("Access denied. No token provided.");
 
   jwt.verify(token, SECRET_KEY, (err, user) => {
@@ -47,7 +46,6 @@ app.post("/auth/login", async (request, response) => {
       });
     }
   } catch (err) {
-    console.log(response);
     response.status(500).json({
       error: "Internal Server Error",
       status: 500,
@@ -176,7 +174,6 @@ app.post("/books/add", async (request, response) => {
   const { title, description, author, genre } = request.body;
   try {
     const result = await client.query(`SELECT * FROM books WHERE title = '${title}'`);
-    console.log(result.rowCount);
     if (result.rowCount === 0) {
       await client.query(`INSERT INTO books (title, description, author,genre) VALUES ('${title}', '${description}', '${author}', '${genre}')`);
       response.status(201).json({
