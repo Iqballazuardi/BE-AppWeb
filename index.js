@@ -98,7 +98,7 @@ app.get("/books", authenticateToken, async (request, response) => {
   }
 });
 
-app.get("/books/search", async (request, response) => {
+app.get("/books/search", authenticateToken, async (request, response) => {
   const { title } = request.query;
   if (!title) {
     response.status(400).send("Query parameter is missing");
@@ -125,7 +125,7 @@ app.get("/books/search", async (request, response) => {
     });
   }
 });
-app.get("/books/genre", async (request, response) => {
+app.get("/books/genre", authenticateToken, async (request, response) => {
   const { genre } = request.query;
   try {
     const result = await client.query(`SELECT * FROM books WHERE genre ILIKE '%${genre}%'`);
@@ -147,7 +147,7 @@ app.get("/books/genre", async (request, response) => {
   }
 });
 
-app.get("/books/:id", async (request, response) => {
+app.get("/books/:id", authenticateToken, async (request, response) => {
   const { id } = request.params;
   try {
     const result = await client.query(`SELECT * FROM books where id =${id}`);
@@ -168,9 +168,7 @@ app.get("/books/:id", async (request, response) => {
     });
   }
 });
-
-// Tambahkan data baru
-app.post("/books/add", async (request, response) => {
+app.post("/books/add", authenticateToken, async (request, response) => {
   const { title, description, author, genre } = request.body;
   try {
     const result = await client.query(`SELECT * FROM books WHERE title = '${title}'`);
@@ -194,7 +192,7 @@ app.post("/books/add", async (request, response) => {
 });
 
 // Update data
-app.put("/books/update/:id", async (request, response) => {
+app.put("/books/update/:id", authenticateToken, async (request, response) => {
   const { id } = request.params;
   const { title, description, author, genre } = request.body;
   try {
@@ -213,7 +211,7 @@ app.put("/books/update/:id", async (request, response) => {
 });
 
 // Hapus data
-app.delete("/books/delete/:id", async (request, response) => {
+app.delete("/books/delete/:id", authenticateToken, async (request, response) => {
   const { id } = request.params;
   try {
     await client.query(`DELETE FROM books WHERE id = ${id}`);
