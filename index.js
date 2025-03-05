@@ -180,7 +180,6 @@ app.post("/books/add", authenticateToken, async (request, response) => {
         message: "Book added successfully",
       });
     } else {
-      // console.log(response);
       response.status(200).json({ message: "Book already exists!" });
     }
   } catch (err) {
