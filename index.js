@@ -188,6 +188,42 @@ app.post("/books/add", authenticateToken, async (request, response) => {
     });
   }
 });
+app.post("/books/borrow", async (request, response) => {
+  // const { id } = req.params;
+  const { userId, bookId } = req.body;
+
+  try {
+    await client.query(`SELECT * from books where id=${bookId}`);
+    if (result.rows.length === 0) {
+      return response.status(404).send("Buku yang dipinjamkan tidak ditemukan.");
+    } else if (result.rows.length === 1 && result.rows[0].isBorrowed === false) {
+      await client.query(`insert into books (isBorrowed, borrowedBy) VALUES ('true', ${userId}) where id = ${bookId}`);
+      response.status(201).json({
+        message: "Buku berhasil dipinjam.",
+        status: 201,
+      });
+    } else if (result.rows[0].isBorrowed === true) {
+      response.status(200).json({
+        message: "Buku sedang dipinjam.",
+        status: 200,
+      });
+    }
+  } catch (e) {
+    response.status(500).json({
+      error: "Internal Server Error",
+      status: 500,
+    });
+  }
+
+  // const book = book.find((b) => b.id === id);
+  // if (!book) return response.status(404).send("Buku tidak ditemukan.");
+  // if (book.isBorrowed) return response.status(400).send("Buku sudah dipinjam.");
+
+  // book.isBorrowed = true;
+  // book.borrowedBy = userId;
+
+  // res.send("Buku berhasil dipinjam.");
+});
 
 // Update data
 app.put("/books/update/:id", authenticateToken, async (request, response) => {
