@@ -1,11 +1,11 @@
-const express = require("express");
 const cors = require("cors");
-const bodyParser = require("body-parser");
+const express = require("express");
 const jwt = require("jsonwebtoken");
+const bodyParser = require("body-parser");
 
-const client = require("./db");
-const app = express();
 const port = 4000;
+const app = express();
+const client = require("./db");
 
 const corsOptions = {
   origin: "http://localhost:5173",
@@ -65,7 +65,6 @@ app.post("/auth/registrasi", async (request, response) => {
         status: 201,
         message: "Registrasi Success!",
       });
-      return response.status;
     } else {
       response.status(200).json({
         status: 200,
