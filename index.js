@@ -30,8 +30,7 @@ const authenticateToken = (request, response, next) => {
 app.post("/auth/login", async (request, response) => {
   const { email, password } = request.body;
   try {
-    const result = await client.query(`SELECT username FROM users WHERE  email = '${email}' AND  password = '${password}' limit 1`);
-
+    const result = await client.query(`SELECT id FROM users WHERE  email = '${email}' AND  password = '${password}' limit 1`);
     if (result.rows.length === 1) {
       response.status(201).json({
         data: result.rows[0],
@@ -82,7 +81,10 @@ app.post("/auth/registrasi", async (request, response) => {
 
 app.get("/books", authenticateToken, async (request, response) => {
   try {
-    const result = await client.query("SELECT * FROM books");
+    // const result = await client.query("SELECT * FROM books");
+    const result = await client.query(
+      "SELECT username AS username,users.id AS userId, books.id AS bookId, books.title, books.author,books.description, books.title, books.genre, books.isborrowed FROM books LEFT JOIN  users ON books.borrowby = users.id"
+    );
     response.status(201).json({
       status: 201,
       data: result.rows,
@@ -189,40 +191,66 @@ app.post("/books/add", authenticateToken, async (request, response) => {
   }
 });
 app.post("/books/borrow", async (request, response) => {
-  // const { id } = req.params;
-  const { userId, bookId } = req.body;
+  const { userId, bookId } = request.body;
 
   try {
-    await client.query(`SELECT * from books where id=${bookId}`);
+    const result = await client.query("SELECT * FROM books WHERE id = $1", [bookId]);
+    console.log(result.rows[0]);
+
     if (result.rows.length === 0) {
-      return response.status(404).send("Buku yang dipinjamkan tidak ditemukan.");
-    } else if (result.rows.length === 1 && result.rows[0].isBorrowed === false) {
-      await client.query(`insert into books (isBorrowed, borrowedBy) VALUES ('true', ${userId}) where id = ${bookId}`);
-      response.status(201).json({
+      return response.status(404).json({
+        message: "Buku yang dipinjamkan tidak ditemukan.",
+        status: 404,
+      });
+    }
+
+    const book = result.rows[0];
+
+    if (book.borrowby === null && book.isborrowed === false) {
+      await client.query("UPDATE books SET isborrowed = $1, borrowby = $2 WHERE id = $3", [true, userId, bookId]);
+
+      return response.status(201).json({
         message: "Buku berhasil dipinjam.",
         status: 201,
       });
-    } else if (result.rows[0].isBorrowed === true) {
-      response.status(200).json({
+    } else if (book.isborrowed === true) {
+      return response.status(200).json({
         message: "Buku sedang dipinjam.",
         status: 200,
       });
     }
   } catch (e) {
-    response.status(500).json({
-      error: "Internal Server Error",
+    console.error("Error:", e); // Log the error for debugging
+    return response.status(500).json({
+      error: "Terjadi kesalahan pada server. Silakan coba lagi.",
       status: 500,
     });
   }
+});
 
-  // const book = book.find((b) => b.id === id);
-  // if (!book) return response.status(404).send("Buku tidak ditemukan.");
-  // if (book.isBorrowed) return response.status(400).send("Buku sudah dipinjam.");
+app.put("/books/return", async (request, response) => {
+  const { userId, bookId } = request.body;
 
-  // book.isBorrowed = true;
-  // book.borrowedBy = userId;
+  try {
+    const result = await client.query(`SELECT * FROM books WHERE borrowby = ${userId} and id = ${bookId}`);
+    if (result.rows.length === 0) {
+      response.status(404).json({
+        message: "Buku yang dipinjamkan tidak ditemukan",
+        status: 404,
+      });
+    }
 
-  // res.send("Buku berhasil dipinjam.");
+    await client.query(`UPDATE books SET isborrowed = false, borrowby = null WHERE borrowby = ${userId} and id = ${bookId}`);
+    response.status(200).json({
+      message: "Buku berhasil dikembalikan.",
+      status: 200,
+    });
+  } catch (e) {
+    response.status(500).json({
+      error: "Terjadi kesalahan pada server. Silakan coba lagi.",
+      status: 500,
+    });
+  }
 });
 
 // Update data
